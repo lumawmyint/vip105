@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>For My Love 💌</title>
+    <style>
+        body {
+            background: #fff5f5;
+            font-family: 'Arial', cursive;
+            text-align: center;
+            padding: 50px;
+        }
+        .envelope {
+            background: #f8bbd0;
+            width: 300px;
+            margin: 0 auto;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .envelope:hover {
+            transform: scale(1.05);
+        }
+        .letter {
+            background: white;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        button {
+            background: #e91e63;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 20px;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>💌 For You My Love 💌</h1>
+    
+    <div class="envelope" onclick="openLetter()">
+        <h2>Click to Open</h2>
+        <div class="letter" id="letter">
+            <p>My Dearest,</p>
+            <p>You make my heart skip a beat every time I see you...</p>
+            <!-- EDIT THIS MESSAGE -->
+            <button onclick="showSurprise()">Click for a Surprise</button>
+        </div>
+    </div>
+
+    <script>
+        function openLetter() {
+            document.getElementById('letter').style.display = 'block';
+        }
+        
+        function showSurprise() {
+            alert("I LOVE YOU MORE THAN WORDS CAN EXPRESS! ❤️"); 
+            // Change this message
+        }
+    </script>
+</body>
+</html>
