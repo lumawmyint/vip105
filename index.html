@@ -575,7 +575,41 @@
                 padding: 0.5rem 1rem 1rem;
             }
         }
-    </style>
+    
+@media (max-width: 480px) {
+    .calendar-weekdays, .calendar-days {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    .calendar-day {
+        font-size: 0.9rem;
+        padding: 0.25rem;
+    }
+    .calendar-day-number {
+        font-size: 1rem;
+    }
+    .calendar-day-amount {
+        font-size: 0.7rem;
+    }
+}
+
+
+@media (max-width: 768px) {
+    .calendar-weekdays, .calendar-days {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+@media (max-width: 480px) {
+    .calendar-weekdays, .calendar-days {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media (max-width: 360px) {
+    .calendar-weekdays, .calendar-days {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+</style>
 </head>
 
 <body>
