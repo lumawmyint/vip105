@@ -457,26 +457,28 @@
             align-items: center;
         }
 
-        /* Scroll to Top Button */
+        /* Scroll to Top Button - Improved Version */
         .scroll-to-top {
             position: fixed;
             bottom: 30px;
             right: 30px;
-            width: 50px;
-            height: 50px;
+            width: 60px; /* Increased size */
+            height: 60px; /* Increased size */
             border-radius: 50%;
             background: #4a6fa5;
             color: white;
             border: none;
             cursor: pointer;
-            font-size: 18px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            font-size: 22px; /* Larger icon */
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3); /* More prominent shadow */
             opacity: 0;
             visibility: hidden;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 1000; /* Ensure it stays on top */
+            pointer-events: auto; /* Ensure it's always clickable */
         }
 
         .scroll-to-top.visible {
@@ -486,6 +488,12 @@
 
         .scroll-to-top:hover {
             background: #3a5a8a;
+            transform: scale(1.05); /* Slight grow effect on hover */
+        }
+
+        /* Make sure no other elements overlap */
+        body {
+            padding-bottom: 100px; /* Prevents content from hiding behind button */
         }
 
         /* Responsive adjustments */
@@ -1106,22 +1114,29 @@
             }).join('');
         }
 
-        // Scroll to Top Button functionality
-            const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+        document.addEventListener('DOMContentLoaded', function () {
+                const scrollToTopBtn = document.getElementById('scrollToTopBtn');
 
-            window.addEventListener('scroll', () => {
-                if (window.pageYOffset > 300) { // Show button after scrolling 300px
-                    scrollToTopBtn.classList.add('visible');
-                } else {
-                    scrollToTopBtn.classList.remove('visible');
-                }
-            });
-
-            scrollToTopBtn.addEventListener('click', () => {
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
+                // More sensitive scroll detection
+                window.addEventListener('scroll', function () {
+                    if (window.pageYOffset > 200) { // Shows earlier (200px instead of 300px)
+                        scrollToTopBtn.classList.add('visible');
+                    } else {
+                        scrollToTopBtn.classList.remove('visible');
+                    }
                 });
+
+                // Better click handling
+                scrollToTopBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                });
+
+                // Ensure button stays clickable
+                scrollToTopBtn.style.pointerEvents = 'auto';
             });
 
         // Initial load
