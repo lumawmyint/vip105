@@ -212,59 +212,116 @@
             color: var(--danger);
         }
 
-        /* Daily Summary Styles */
-        .daily-summary {
+        /* Calendar Styles */
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .calendar-header {
             display: flex;
-            overflow-x: auto;
-            gap: 0.75rem;
-            padding: 0.5rem 0;
-            margin-bottom: 1.5rem;
-            scrollbar-width: thin;
-            scrollbar-color: var(--primary-light) transparent;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
         }
 
-        .daily-summary::-webkit-scrollbar {
-            height: 6px;
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
-        .daily-summary::-webkit-scrollbar-thumb {
-            background-color: var(--primary-light);
-            border-radius: 3px;
+        .calendar-nav-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--gray);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
         }
 
-        .daily-summary-item {
-            min-width: 120px;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            background-color: white;
-            box-shadow: var(--card-shadow);
+        .calendar-nav-btn:hover {
+            background: var(--gray-light);
+            color: var(--dark);
+        }
+
+        .calendar-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .calendar-weekday {
+            padding: 0.5rem;
+        }
+
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.25rem;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
             cursor: pointer;
             transition: all 0.2s ease;
+            position: relative;
+            padding: 0.5rem;
+            font-size: 1.1rem;
         }
 
-        .daily-summary-item:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--card-shadow-hover);
+        .calendar-day.empty {
+            background: transparent;
+            cursor: default;
         }
 
-        .daily-summary-item.active {
-            background-color: var(--primary-light);
-            border: 1px solid var(--primary);
+        .calendar-day:hover:not(.empty) {
+            background: var(--primary-light);
         }
 
-        .daily-summary-date {
-            font-size: 0.75rem;
-            color: var(--gray);
-            margin-bottom: 0.25rem;
-            white-space: nowrap;
+        .calendar-day.active-day {
+            background: var(--primary-light);
+            border: 2px solid var(--primary);
         }
 
-        .daily-summary-amount {
+        .calendar-day-number {
+            font-size: 1.2rem;
             font-weight: 600;
-            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .calendar-day-amount {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            background: var(--primary-light);
+            padding: 0.15rem 0.3rem;
+            border-radius: 0.25rem;
+        }
+
+        .calendar-day.today .calendar-day-number {
+            color: var(--primary);
+            font-weight: 600;
         }
 
         /* Expense List Styles */
@@ -408,17 +465,17 @@
                 gap: 1rem;
             }
 
-            .daily-summary-item {
-                min-width: 100px;
-                padding: 0.5rem;
+            .calendar-day {
+                padding: 0.25rem;
+                font-size: 1rem;
             }
 
-            .daily-summary-date {
+            .calendar-day-number {
+                font-size: 1rem;
+            }
+
+            .calendar-day-amount {
                 font-size: 0.7rem;
-            }
-
-            .daily-summary-amount {
-                font-size: 0.9rem;
             }
 
             .day-header {
@@ -499,18 +556,16 @@
             </div>
         </section>
 
-        
-
-        <!-- Daily Summary Section -->
+        <!-- Calendar Summary Section -->
         <section class="card">
             <h2 class="card-title">
                 <i class="fas fa-calendar-alt"></i>
                 Daily Summary
             </h2>
-            <div class="daily-summary" id="daily-summary-container">
+            <div id="calendar-container">
                 <div class="loading">
                     <i class="fas fa-circle-notch spin"></i>
-                    Loading daily summary...
+                    Loading calendar...
                 </div>
             </div>
         </section>
@@ -530,88 +585,90 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzNvLXpP81As4DSa78LoZcE7V9qqR7V07e4HPJOTqQoqDesUtO8dNYth3H2b-APq5BRPw/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzound-PLrdnJs0fUH-qml6ehXvZBoROSN_rjlOn_676yy4CfUv6wejJeOtKhMmSElYGA/exec";
         let lastFetchTime = 0;
         let expensesData = null;
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
 
         function updateDailyExpensesChart(data) {
-                const ctx = document.getElementById('daily-expenses-chart').getContext('2d');
+            const ctx = document.getElementById('daily-expenses-chart').getContext('2d');
 
-                // Group expenses by day
-                const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-                const dailyTotals = Array(daysInMonth).fill(0);
+            // Group expenses by day
+            const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+            const dailyTotals = Array(daysInMonth).fill(0);
 
-                data.expenses.forEach(day => {
-                    const dayOfMonth = new Date(day.date).getDate();
-                    dailyTotals[dayOfMonth - 1] = day.total;
-                });
+            data.expenses.forEach(day => {
+                const dayOfMonth = new Date(day.date).getDate();
+                dailyTotals[dayOfMonth - 1] = day.total;
+            });
 
-                // Generate labels for each day
-                const labels = Array.from({ length: daysInMonth }, (_, i) => `Day ${i + 1}`);
+            // Generate labels for each day
+            const labels = Array.from({ length: daysInMonth }, (_, i) => `Day ${i + 1}`);
 
-                // Generate colors - using a gradient from light to dark
-                const backgroundColors = dailyTotals.map((_, i) => {
-                    const hue = (i * (360 / daysInMonth)) % 360;
-                    return `hsl(${hue}, 70%, 60%)`;
-                });
+            // Generate colors - using a gradient from light to dark
+            const backgroundColors = dailyTotals.map((_, i) => {
+                const hue = (i * (360 / daysInMonth)) % 360;
+                return `hsl(${hue}, 70%, 60%)`;
+            });
 
-                // Destroy previous chart if it exists
-                if (window.dailyExpensesChart) {
-                    window.dailyExpensesChart.destroy();
-                }
+            // Destroy previous chart if it exists
+            if (window.dailyExpensesChart) {
+                window.dailyExpensesChart.destroy();
+            }
 
-                window.dailyExpensesChart = new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: dailyTotals,
-                            backgroundColor: backgroundColors,
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'right',
-                                labels: {
-                                    boxWidth: 12,
-                                    padding: 20,
-                                    font: {
-                                        size: 10
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function (context) {
-                                        const label = context.label || '';
-                                        const value = context.raw || 0;
-                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                        const percentage = Math.round((value / total) * 100);
-                                        return `${label}: ${value.toLocaleString()} THB (${percentage}%)`;
-                                    }
+            window.dailyExpensesChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dailyTotals,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 20,
+                                font: {
+                                    size: 10
                                 }
                             }
                         },
-                        onClick: (event, elements) => {
-                            if (elements.length > 0) {
-                                const index = elements[0].index;
-                                const day = index + 1;
-                                // Find the date that matches this day of month
-                                const targetDate = data.expenses.find(d =>
-                                    new Date(d.date).getDate() === day
-                                )?.date;
-                                if (targetDate) {
-                                    scrollToDay(targetDate);
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value.toLocaleString()} THB (${percentage}%)`;
                                 }
                             }
                         }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const day = index + 1;
+                            // Find the date that matches this day of month
+                            const targetDate = data.expenses.find(d =>
+                                new Date(d.date).getDate() === day
+                            )?.date;
+                            if (targetDate) {
+                                scrollToDate(targetDate);
+                            }
+                        }
                     }
-                });
-            }
+                }
+            });
+        }
 
         async function loadData() {
             const now = Date.now();
@@ -628,17 +685,17 @@
             refreshBtn.disabled = true;
             refreshIcon.classList.add('spin');
             document.getElementById('expenses-container').innerHTML = `
-                <div class="loading">
-                    <i class="fas fa-circle-notch spin"></i>
-                    Loading latest data...
-                </div>
-            `;
-            document.getElementById('daily-summary-container').innerHTML = `
-                <div class="loading">
-                    <i class="fas fa-circle-notch spin"></i>
-                    Loading daily summary...
-                </div>
-            `;
+                    <div class="loading">
+                        <i class="fas fa-circle-notch spin"></i>
+                        Loading latest data...
+                    </div>
+                `;
+            document.getElementById('calendar-container').innerHTML = `
+                    <div class="loading">
+                        <i class="fas fa-circle-notch spin"></i>
+                        Loading calendar...
+                    </div>
+                `;
 
             try {
                 const response = await fetch(`${SCRIPT_URL}?t=${now}`);
@@ -656,29 +713,29 @@
                 expensesData = data;
                 updateBalance(data);
                 updateProgressCircle(data);
-                displayDailySummary(data);
+                renderCalendar(data);
                 displayExpenses(data);
                 updateDailyExpensesChart(data);
 
                 // Show last updated time
                 statusEl.innerHTML = `
-                    <div style="color: var(--success); display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fas fa-check-circle"></i>
-                        Last updated: ${new Date().toLocaleTimeString()}
-                    </div>
-                `;
+                        <div style="color: var(--success); display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-check-circle"></i>
+                            Last updated: ${new Date().toLocaleTimeString()}
+                        </div>
+                    `;
 
             } catch (error) {
                 console.error('Error:', error);
                 statusEl.innerHTML = `
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <div>
-                            <strong>Error loading data:</strong> ${error.message}<br>
-                            <small>Please check your connection and try again</small>
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <div>
+                                <strong>Error loading data:</strong> ${error.message}<br>
+                                <small>Please check your connection and try again</small>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
 
                 // Fallback to JSONP if standard fetch fails
                 if (error.message.includes('fetch')) {
@@ -701,7 +758,7 @@
                 expensesData = data;
                 updateBalance(data);
                 updateProgressCircle(data);
-                displayDailySummary(data);
+                renderCalendar(data);
                 displayExpenses(data);
                 updateDailyExpensesChart(data);
             };
@@ -713,14 +770,14 @@
                 if (window[callbackName]) {
                     delete window[callbackName];
                     document.getElementById('status-message').innerHTML = `
-                        <div class="error-message">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <div>
-                                <strong>Connection Timeout</strong><br>
-                                <small>The server is not responding. Please try again later.</small>
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <div>
+                                    <strong>Connection Timeout</strong><br>
+                                    <small>The server is not responding. Please try again later.</small>
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
                 }
             }, 8000);
         }
@@ -768,32 +825,153 @@
             }
         }
 
-        function displayDailySummary(data) {
-            const container = document.getElementById('daily-summary-container');
+        function renderCalendar(data) {
+            const container = document.getElementById('calendar-container');
 
             if (!data.expenses || data.expenses.length === 0) {
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 1rem; color: var(--gray);">
-                        <i class="fas fa-inbox" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
-                        <div>No expenses recorded yet</div>
-                    </div>
-                `;
+                        <div style="text-align: center; padding: 1rem; color: var(--gray);">
+                            <i class="fas fa-inbox" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+                            <div>No expenses recorded yet</div>
+                        </div>
+                    `;
                 return;
             }
 
-            container.innerHTML = data.expenses.map(day => `
-                <div class="daily-summary-item" onclick="scrollToDay('${day.date}')">
-                    <div class="daily-summary-date">
-                        ${new Date(day.date).toLocaleDateString('en-GB', {
-                weekday: 'short',
-                day: 'numeric'
-            })}
+            // Create a map of date to total amount for quick lookup
+            const expenseMap = {};
+            data.expenses.forEach(day => {
+                const date = new Date(day.date);
+                const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+                expenseMap[dateKey] = day.total;
+            });
+
+            // Get first day of month and total days in month
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const today = new Date();
+            const isCurrentMonth = currentMonth === today.getMonth() && currentYear === today.getFullYear();
+
+            // Generate calendar HTML
+            const monthName = new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+            let calendarHTML = `
+                    <div class="calendar-header">
+                        <div class="calendar-title">${monthName}</div>
+                        <div class="calendar-nav">
+                            <button class="calendar-nav-btn" onclick="changeMonth(-1)">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="calendar-nav-btn" onclick="changeMonth(1)">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="daily-summary-amount">
-                        ${day.total.toLocaleString()} THB
+                    <div class="calendar-weekdays">
+                        <div class="calendar-weekday">Sun</div>
+                        <div class="calendar-weekday">Mon</div>
+                        <div class="calendar-weekday">Tue</div>
+                        <div class="calendar-weekday">Wed</div>
+                        <div class="calendar-weekday">Thu</div>
+                        <div class="calendar-weekday">Fri</div>
+                        <div class="calendar-weekday">Sat</div>
                     </div>
-                </div>
-            `).join('');
+                    <div class="calendar-days">
+                `;
+
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < firstDay; i++) {
+                calendarHTML += `<div class="calendar-day empty"></div>`;
+            }
+
+            // Add cells for each day of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(currentYear, currentMonth, day);
+                const dateString = date.toISOString().split('T')[0];
+                const dateKey = `${currentYear}-${currentMonth}-${day}`;
+                const hasExpense = expenseMap[dateKey] !== undefined;
+                const isToday = isCurrentMonth && day === today.getDate();
+                const expenseAmount = hasExpense ? expenseMap[dateKey] : 0;
+
+                calendarHTML += `
+                        <div class="calendar-day ${isToday ? 'today' : ''}" 
+                             onclick="scrollToDate('${dateString}', this)">
+                            <div class="calendar-day-number">${day}</div>
+                            ${hasExpense ?
+                        `<div class="calendar-day-amount">${expenseAmount.toLocaleString()} THB</div>` :
+                        ''}
+                        </div>
+                    `;
+            }
+
+            calendarHTML += `</div>`;
+            container.innerHTML = calendarHTML;
+        }
+
+        function changeMonth(offset) {
+            currentMonth += offset;
+
+            // Adjust year if month goes out of bounds
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            } else if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+
+            // Re-render calendar with the new month
+            if (expensesData) {
+                renderCalendar(expensesData);
+            }
+        }
+
+        function scrollToDate(dateString, clickedElement) {
+            // Remove active class from all days
+            document.querySelectorAll('.calendar-day').forEach(day => {
+                day.classList.remove('active-day');
+            });
+
+            // Add active class to clicked day
+            if (clickedElement) {
+                clickedElement.classList.add('active-day');
+            }
+
+            // Find the expense day element
+            const element = document.getElementById(`day-${dateString}`);
+
+            if (element) {
+                // Scroll to the element with some offset from top
+                const offset = 120;
+                const elementPosition = element.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+
+                // Add temporary highlight
+                element.style.transition = 'background-color 0.3s ease';
+                element.style.backgroundColor = 'var(--primary-light)';
+                setTimeout(() => {
+                    element.style.backgroundColor = '';
+                }, 2000);
+            } else {
+                // If no expenses for that date, show a message
+                const statusEl = document.getElementById('status-message');
+                statusEl.innerHTML = `
+                        <div style="background-color: var(--warning-light); color: var(--warning); 
+                                    padding: 0.75rem; border-radius: 0.5rem; display: flex; 
+                                    align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-info-circle"></i>
+                            No expenses recorded for ${new Date(dateString).toLocaleDateString()}
+                        </div>
+                    `;
+                setTimeout(() => {
+                    statusEl.innerHTML = '';
+                }, 3000);
+            }
         }
 
         function displayExpenses(data) {
@@ -801,52 +979,45 @@
 
             if (!data.expenses || data.expenses.length === 0) {
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 2rem; color: var(--gray);">
-                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                        <div>No expenses recorded yet</div>
-                    </div>
-                `;
+                        <div style="text-align: center; padding: 2rem; color: var(--gray);">
+                            <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                            <div>No expenses recorded yet</div>
+                        </div>
+                    `;
                 return;
             }
 
-            container.innerHTML = data.expenses.map(day => `
-                <div class="expense-day" id="day-${day.date}">
-                    <div class="day-header">
-                        <div class="day-date">
-                            ${new Date(day.date).toLocaleDateString('en-GB', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric'
-            })}
-                        </div>
-                        <div class="day-total">
-                            ${day.total.toLocaleString()} THB
-                        </div>
-                    </div>
-                    <div class="expense-list">
-                        ${day.items.map(item => `
-                            <div class="expense-item">
-                                <div class="expense-desc">${item.description}</div>
-                                <div class="expense-amount">${item.amount.toLocaleString()} THB</div>
+            container.innerHTML = data.expenses.map(day => {
+                // Ensure the date is formatted consistently
+                const date = new Date(day.date);
+                const dateString = date.toISOString().split('T')[0];
+
+                return `
+                        <div class="expense-day" id="day-${dateString}">
+                            <div class="day-header">
+                                <div class="day-date">
+                                    ${date.toLocaleDateString('en-GB', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                })}
+                                </div>
+                                <div class="day-total">
+                                    ${day.total.toLocaleString()} THB
+                                </div>
                             </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function scrollToDay(date) {
-            const element = document.getElementById(`day-${date}`);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-                // Add temporary highlight
-                element.style.backgroundColor = 'var(--primary-light)';
-                setTimeout(() => {
-                    element.style.backgroundColor = '';
-                }, 2000);
-            }
+                            <div class="expense-list">
+                                ${day.items.map(item => `
+                                    <div class="expense-item">
+                                        <div class="expense-desc">${item.description}</div>
+                                        <div class="expense-amount">${item.amount.toLocaleString()} THB</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+            }).join('');
         }
 
         // Initial load
