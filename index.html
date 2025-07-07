@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Expense Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .day-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .date-header {
+            background: #4285f4;
+            color: white;
+            padding: 8px 15px;
+            margin: -15px -15px 15px -15px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .expense-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .total {
+            font-weight: bold;
+            text-align: right;
+            margin-top: 10px;
+            color: #4285f4;
+        }
+
+        .error {
+            color: #d32f2f;
+            padding: 15px;
+            background: #ffebee;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Daily Expenses</h1>
+    Main Balance = 4000 THB
+    <div id="expenses-container">Loading...</div>
+
+    <script>
+        const SCRIPT_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLjJfTMdwS9mYXrY9AHkM-I_BwgeXS9NsaoEui65oEf7JSgv5bFA5k4kWd1GdW7A3meY5_gp4IcU0F9nMTn3RIe6if_KAAgvwQO8fwmtsBbka_ePhzhWdMQLJt5ffEZeON8A3tLcqvGnUgBgLOzvIBvkIA9jVDg0oNHOBguvIhie3ykjMLVl5osnSAVj_1saPMkuhoDySltAoAmxb-wxwQ6UPi3KAVyciNKmiQTZ9mSdUymYqfgAPjtu1oBvyKSkRCQy7L33cCStYq4rDVsqiC2Z0Rog2OsBZo5twuUR&lib=MhKAfR-cPD1k6aPJjP1vcnNa_oCfsMP1A";
+
+        async function loadData() {
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const data = await response.json();
+
+                if (data.status === "error") {
+                    showError(data.message);
+                    return;
+                }
+
+                displayData(data);
+            } catch (error) {
+                showError(`Failed to load data: ${error.message}`);
+            }
+        }
+
+        function displayData(expenses) {
+            const container = document.getElementById('expenses-container');
+
+            if (!expenses || expenses.length === 0) {
+                container.innerHTML = '<div class="error">No expenses found</div>';
+                return;
+            }
+
+            container.innerHTML = expenses.map(day => `
+        <div class="day-card">
+          <div class="date-header">
+            ${new Date(day.date).toLocaleDateString('en-GB')}
+          </div>
+          ${day.items.map(item => `
+            <div class="expense-item">
+              <span>${item.description}</span>
+              <span>${item.amount.toLocaleString()} THB</span>
+            </div>
+          `).join('')}
+          <div class="total">Total: ${day.total.toLocaleString()} THB</div>
+        </div>
+      `).join('');
+        }
+
+        function showError(message) {
+            document.getElementById('expenses-container').innerHTML = `
+        <div class="error">
+          <strong>Error:</strong> ${message}
+          <p>Please check: 1) Sheet name 2) Internet connection 3) Script URL</p>
+        </div>`;
+        }
+
+        loadData();
+    </script>
+</body>
+
+</html>
