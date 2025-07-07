@@ -440,6 +440,41 @@
             animation: spin 1s linear infinite;
         }
 
+        .combined-container {
+            display: flex;
+            gap: 20px; /* Space between the two sections */
+            padding: 20px;
+        }
+
+        .combined-left {
+            flex: 1;
+        }
+
+        .combined-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Adjust the progress circle size if needed */
+        .progress-circle-container {
+            width: 100%;
+            max-width: 200px;
+            margin: 0 auto;
+        }
+
+        /* For mobile responsiveness */
+        @media (max-width: 768px) {
+            .combined-container {
+                flex-direction: column;
+            }
+            
+            .progress-circle-container {
+                max-width: 150px;
+            }
+        }
+
         /* Responsive */
         @media (max-width: 640px) {
             .container {
@@ -504,47 +539,48 @@
 
         <div id="status-message"></div>
 
-        <section class="card" id="balance-container">
-            <h2 class="card-title">
-                <i class="fas fa-coins"></i>
-                Monthly Balance
-            </h2>
-            <div class="balance-grid">
-                <div class="balance-item">
-                    <div class="balance-label">Starting Capital</div>
-                    <div class="balance-value" id="capital-value">-</div>
-                </div>
-                <div class="balance-item">
-                    <div class="balance-label">Total Expenses</div>
-                    <div class="balance-value" id="expenses-value">-</div>
-                </div>
-                <div class="balance-item">
-                    <div class="balance-label">Remaining Balance</div>
-                    <div class="balance-value" id="balance-value">-</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Progress Circle Chart -->
-        <div class="card">
-            <h2 class="card-title">
-                <i class="fas fa-chart-pie"></i>
-                Budget Progress
-            </h2>
-            <div class="progress-circle-container">
-                <div class="progress-circle">
-                    <svg viewBox="0 0 100 100">
-                        <circle class="progress-circle-bg" cx="50" cy="50" r="45"></circle>
-                        <circle class="progress-circle-fill" cx="50" cy="50" r="45" stroke-dasharray="283"
-                            stroke-dashoffset="283"></circle>
-                    </svg>
-                    <div class="progress-circle-text">
-                        <div class="progress-circle-percent" id="progress-percent">0%</div>
-                        <div class="progress-circle-label" id="progress-text">of budget used</div>
+        <section class="card combined-container">
+            <div class="combined-left">
+                <h2 class="card-title">
+                    <i class="fas fa-coins"></i>
+                    Monthly Balance
+                </h2>
+                <div class="balance-grid">
+                    <div class="balance-item">
+                        <div class="balance-label">Starting Capital</div>
+                        <div class="balance-value" id="capital-value">-</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-label">Total Expenses</div>
+                        <div class="balance-value" id="expenses-value">-</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-label">Remaining Balance</div>
+                        <div class="balance-value" id="balance-value">-</div>
                     </div>
                 </div>
             </div>
-        </div>
+        
+            <div class="combined-right">
+                <h2 class="card-title">
+                    <i class="fas fa-chart-pie"></i>
+                    Budget Progress
+                </h2>
+                <div class="progress-circle-container">
+                    <div class="progress-circle">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="progress-circle-bg" cx="50" cy="50" r="45"></circle>
+                            <circle class="progress-circle-fill" cx="50" cy="50" r="45" stroke-dasharray="283"
+                                stroke-dashoffset="283"></circle>
+                        </svg>
+                        <div class="progress-circle-text">
+                            <div class="progress-circle-percent" id="progress-percent">0%</div>
+                            <div class="progress-circle-label" id="progress-text">of budget used</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <section class="card">
             <h2 class="card-title">
