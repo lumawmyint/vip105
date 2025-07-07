@@ -7,6 +7,7 @@
     <title>Modern Expense Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #4361ee;
@@ -358,6 +359,19 @@
             font-size: 1.25rem;
         }
 
+        /* Add this to your CSS */
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 300px;
+            width: 100%;
+        }
+
         /* Animation */
         @keyframes spin {
             to {
@@ -433,6 +447,27 @@
 
         <div id="status-message"></div>
 
+        <section class="card" id="balance-container">
+            <h2 class="card-title">
+                <i class="fas fa-coins"></i>
+                Monthly Balance
+            </h2>
+            <div class="balance-grid">
+                <div class="balance-item">
+                    <div class="balance-label">Starting Capital</div>
+                    <div class="balance-value" id="capital-value">-</div>
+                </div>
+                <div class="balance-item">
+                    <div class="balance-label">Total Expenses</div>
+                    <div class="balance-value" id="expenses-value">-</div>
+                </div>
+                <div class="balance-item">
+                    <div class="balance-label">Remaining Balance</div>
+                    <div class="balance-value" id="balance-value">-</div>
+                </div>
+            </div>
+        </section>
+
         <!-- Progress Circle Chart -->
         <div class="card">
             <h2 class="card-title">
@@ -454,26 +489,17 @@
             </div>
         </div>
 
-        <section class="card" id="balance-container">
+        <section class="card">
             <h2 class="card-title">
-                <i class="fas fa-coins"></i>
-                Monthly Balance
+                <i class="fas fa-chart-pie"></i>
+                Daily Expenses Distribution
             </h2>
-            <div class="balance-grid">
-                <div class="balance-item">
-                    <div class="balance-label">Starting Capital</div>
-                    <div class="balance-value" id="capital-value">-</div>
-                </div>
-                <div class="balance-item">
-                    <div class="balance-label">Total Expenses</div>
-                    <div class="balance-value" id="expenses-value">-</div>
-                </div>
-                <div class="balance-item">
-                    <div class="balance-label">Remaining Balance</div>
-                    <div class="balance-value" id="balance-value">-</div>
-                </div>
+            <div style="position: relative; height: 300px;">
+                <canvas id="daily-expenses-chart"></canvas>
             </div>
         </section>
+
+        
 
         <!-- Daily Summary Section -->
         <section class="card">
@@ -507,6 +533,85 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzNvLXpP81As4DSa78LoZcE7V9qqR7V07e4HPJOTqQoqDesUtO8dNYth3H2b-APq5BRPw/exec";
         let lastFetchTime = 0;
         let expensesData = null;
+
+        function updateDailyExpensesChart(data) {
+                const ctx = document.getElementById('daily-expenses-chart').getContext('2d');
+
+                // Group expenses by day
+                const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+                const dailyTotals = Array(daysInMonth).fill(0);
+
+                data.expenses.forEach(day => {
+                    const dayOfMonth = new Date(day.date).getDate();
+                    dailyTotals[dayOfMonth - 1] = day.total;
+                });
+
+                // Generate labels for each day
+                const labels = Array.from({ length: daysInMonth }, (_, i) => `Day ${i + 1}`);
+
+                // Generate colors - using a gradient from light to dark
+                const backgroundColors = dailyTotals.map((_, i) => {
+                    const hue = (i * (360 / daysInMonth)) % 360;
+                    return `hsl(${hue}, 70%, 60%)`;
+                });
+
+                // Destroy previous chart if it exists
+                if (window.dailyExpensesChart) {
+                    window.dailyExpensesChart.destroy();
+                }
+
+                window.dailyExpensesChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: dailyTotals,
+                            backgroundColor: backgroundColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: 20,
+                                    font: {
+                                        size: 10
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = Math.round((value / total) * 100);
+                                        return `${label}: ${value.toLocaleString()} THB (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        },
+                        onClick: (event, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const day = index + 1;
+                                // Find the date that matches this day of month
+                                const targetDate = data.expenses.find(d =>
+                                    new Date(d.date).getDate() === day
+                                )?.date;
+                                if (targetDate) {
+                                    scrollToDay(targetDate);
+                                }
+                            }
+                        }
+                    }
+                });
+            }
 
         async function loadData() {
             const now = Date.now();
@@ -553,6 +658,7 @@
                 updateProgressCircle(data);
                 displayDailySummary(data);
                 displayExpenses(data);
+                updateDailyExpensesChart(data);
 
                 // Show last updated time
                 statusEl.innerHTML = `
@@ -597,6 +703,7 @@
                 updateProgressCircle(data);
                 displayDailySummary(data);
                 displayExpenses(data);
+                updateDailyExpensesChart(data);
             };
 
             script.src = `${SCRIPT_URL}?callback=${callbackName}&t=${Date.now()}`;
