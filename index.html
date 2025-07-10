@@ -392,6 +392,17 @@
             margin-left: 1rem;
         }
 
+        /* Make the entire balance item clickable */
+        .clickable-balance {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .clickable-balance:hover {
+            background-color: rgba(67, 97, 238, 0.1);
+            transform: translateY(-2px);
+        }
+
         /* Status Messages */
         .loading {
             display: flex;
@@ -521,6 +532,105 @@
             }
         }
 
+        /* css for new display area */
+        /* Modal Styles */
+        /*
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        } 
+        */
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 15px 0;
+        }
+
+        .capital-summary {
+            margin-top: 20px;
+        }
+
+        .capital-total {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .capital-breakdown h4 {
+            margin: 15px 0 10px;
+            color: var(--dark);
+        }
+
+        #capitalTransactions {
+            list-style-type: none;
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .balance-label {
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .balance-label:hover {
+            color: var(--primary);
+        }
+
+        #capitalTransactions li {
+            padding: 8px 0;
+            /*border-bottom: 1px solid var(--gray-light);*/
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #capitalTransactions li.total {
+            font-weight: 600;
+            color: var(--dark);
+            border-top: 2px solid var(--gray-light);
+            margin-top: 5px;
+        }
+
+        #capitalTransactions li.error {
+            color: var(--danger);
+        }
+
+        .balance-label {
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .balance-label:hover {
+            color: var(--primary);
+        }
+
         /* Adjust the progress circle size if needed */
         .progress-circle-container {
             width: 100%;
@@ -647,6 +757,17 @@
             </button>
         </header>
 
+        <!-- Capital Details Modal -->
+        <div id="capitalModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3><i class="fas fa-piggy-bank"></i> Capital Details</h3>
+                <div class="modal-body">
+                    <!-- Content will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </div>
+
         <div id="status-message"></div>
 
         <section class="card combined-container">
@@ -656,9 +777,9 @@
                     Monthly Balance
                 </h2>
                 <div class="balance-grid">
-                    <div class="balance-item">
+                    <div class="balance-item clickable-balance" data-type="capital">
                         <div class="balance-label">Starting Capital</div>
-                        <div class="balance-value" id="capital-value">-</div>
+                        <div class="balance-value" id="capital-value">-</div>              
                     </div>
                     <div class="balance-item">
                         <div class="balance-label">Total Expenses</div>
@@ -706,7 +827,7 @@
                     <i class="fas fa-circle-notch spin"></i>
                     Loading chart data...
                 </div>
-                <canvas id="daily-expenses-chart" style="display: none;"></canvas>      
+                <canvas id="daily-expenses-chart" style="display: none;"></canvas>
             </div>
         </section>
 
@@ -740,97 +861,20 @@
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzound-PLrdnJs0fUH-qml6ehXvZBoROSN_rjlOn_676yy4CfUv6wejJeOtKhMmSElYGA/exec";
+        const CAPITAL_DETAILS_URL = "https://script.google.com/macros/s/AKfycbxA7gr7n-q3fMA2j_tYddwed4sdnmH4Q1Jvm2NYptVwnLW_GDE8j41B8NL4xwkqzXBZLw/exec?type=capitalDetails";
+
         let lastFetchTime = 0;
         let expensesData = null;
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
 
-        function updateDailyExpensesChart(data) {
-            document.getElementById('chart-loading').style.display = 'none';
-            document.getElementById('daily-expenses-chart').style.display = 'block';
-            const ctx = document.getElementById('daily-expenses-chart').getContext('2d');
-
-            // Group expenses by day
-            const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-            const dailyTotals = Array(daysInMonth).fill(0);
-
-            data.expenses.forEach(day => {
-                const dayOfMonth = new Date(day.date).getDate();
-                dailyTotals[dayOfMonth - 1] = day.total;
-            });
-
-            // Generate labels for each day
-            const labels = Array.from({ length: daysInMonth }, (_, i) => `Day ${i + 1}`);
-
-            // Generate colors - using a gradient from light to dark
-            const backgroundColors = dailyTotals.map((_, i) => {
-                const hue = (i * (360 / daysInMonth)) % 360;
-                return `hsl(${hue}, 70%, 60%)`;
-            });
-
-            // Destroy previous chart if it exists
-            if (window.dailyExpensesChart) {
-                window.dailyExpensesChart.destroy();
-            }
-
-            window.dailyExpensesChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: dailyTotals,
-                        backgroundColor: backgroundColors,
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                boxWidth: 12,
-                                padding: 20,
-                                font: {
-                                    size: 10
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${value.toLocaleString()} THB (${percentage}%)`;
-                                }
-                            }
-                        }
-                    },
-                    onClick: (event, elements) => {
-                        if (elements.length > 0) {
-                            const index = elements[0].index;
-                            const day = index + 1;
-                            // Find the date that matches this day of month
-                            const targetDate = data.expenses.find(d =>
-                                new Date(d.date).getDate() === day
-                            )?.date;
-                            if (targetDate) {
-                                scrollToDate(targetDate);
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        // ================== MAIN FUNCTIONS ================== //
 
         async function loadData() {
             document.getElementById('chart-loading').style.display = 'flex';
             document.getElementById('daily-expenses-chart').style.display = 'none';
+
             const now = Date.now();
-            // Prevent rapid refreshes (2 second cooldown)
             if (now - lastFetchTime < 2000) return;
             lastFetchTime = now;
 
@@ -855,17 +899,28 @@
                     </div>
                 `;
 
-            try {
+                try {
                 const response = await fetch(`${SCRIPT_URL}?t=${now}`);
+                if (!response.ok) throw new Error(`Server responded with ${response.status}`);
 
-                if (!response.ok) {
-                    throw new Error(`Server responded with ${response.status}`);
+                const jsonData = await response.json();
+                let data = jsonData.status === "success" ? jsonData.data : jsonData;
+
+                // Ensure data has the required properties
+                data = {
+                    capital: Number(data.capital) || 0,
+                    totalExpenses: Number(data.totalExpenses) || 0,
+                    remainingBalance: Number(data.remainingBalance) || 0,
+                    expenses: data.expenses || []
+                };
+
+                // Calculate totals if not provided
+                if (!data.totalExpenses && data.expenses.length > 0) {
+                    data.totalExpenses = data.expenses.reduce((sum, expense) => sum + (expense.total || 0), 0);
                 }
 
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
+                if (!data.remainingBalance && data.capital !== undefined) {
+                    data.remainingBalance = data.capital - data.totalExpenses;
                 }
 
                 expensesData = data;
@@ -874,8 +929,8 @@
                 renderCalendar(data);
                 displayExpenses(data);
                 updateDailyExpensesChart(data);
+                
 
-                // Show last updated time
                 statusEl.innerHTML = `
                         <div style="color: var(--success); display: flex; align-items: center; gap: 0.5rem;">
                             <i class="fas fa-check-circle"></i>
@@ -895,10 +950,7 @@
                         </div>
                     `;
 
-                // Fallback to JSONP if standard fetch fails
-                if (error.message.includes('fetch')) {
-                    tryJsonp();
-                }
+                if (error.message.includes('fetch')) tryJsonp();
                 document.getElementById('chart-loading').style.display = 'none';
                 document.getElementById('daily-expenses-chart').style.display = 'block';
             } finally {
@@ -907,83 +959,105 @@
             }
         }
 
-        // JSONP fallback method
-        function tryJsonp() {
-            const callbackName = 'jsonp_' + Date.now();
-            const script = document.createElement('script');
+        // ================== CAPITAL DETAILS FEATURE ================== //
 
-            window[callbackName] = function (data) {
-                delete window[callbackName];
-                document.body.removeChild(script);
-                expensesData = data;
-                updateBalance(data);
-                updateProgressCircle(data);
-                renderCalendar(data);
-                displayExpenses(data);
-                updateDailyExpensesChart(data);
-            };
+        async function fetchCapitalDetails() {
+            const modal = document.getElementById('capitalModal');
+            try {
+                modal.style.display = 'block';
+                document.getElementById('capitalTransactions').innerHTML = '<li>Loading...</li>';
 
-            script.src = `${SCRIPT_URL}?callback=${callbackName}&t=${Date.now()}`;
-            document.body.appendChild(script);
+                const response = await fetch(CAPITAL_DETAILS_URL);
+                const data = await response.json();
 
-            setTimeout(() => {
-                if (window[callbackName]) {
-                    delete window[callbackName];
-                    document.getElementById('status-message').innerHTML = `
-                            <div class="error-message">
-                                <i class="fas fa-exclamation-circle"></i>
-                                <div>
-                                    <strong>Connection Timeout</strong><br>
-                                    <small>The server is not responding. Please try again later.</small>
-                                </div>
-                            </div>
-                        `;
+                if (data.status === 'success') {
+                    displayCapitalDetails(data.data);
+                } else {
+                    throw new Error(data.error || 'Failed to load details');
                 }
-            }, 8000);
-        }
-
-        function updateBalance(data) {
-            const remaining = data.remainingBalance;
-            const isNegative = remaining < 0;
-
-            document.getElementById('capital-value').textContent =
-                `${data.capital.toLocaleString()} THB`;
-
-            document.getElementById('expenses-value').textContent =
-                `${data.grandTotal.toLocaleString()} THB`;
-
-            const balanceEl = document.getElementById('balance-value');
-            balanceEl.textContent = `${Math.abs(remaining).toLocaleString()} THB`;
-            balanceEl.className = `balance-value ${isNegative ? 'balance-negative' : 'balance-positive'}`;
-
-            if (isNegative) {
-                balanceEl.innerHTML += ` <small>(Over Budget)</small>`;
+            } catch (error) {
+                document.getElementById('capitalTransactions').innerHTML =
+                    `<li class="error">Error: ${error.message}</li>`;
             }
         }
 
-        function updateProgressCircle(data) {
-            const spentPercentage = Math.min(100, (data.grandTotal / data.capital) * 100);
-            const remainingPercentage = 100 - spentPercentage;
-            const circumference = 2 * Math.PI * 45; // 2πr
-            const offset = circumference - (spentPercentage / 100) * circumference;
+        async function fetchCapitalDetails() {
+                const modal = document.getElementById('capitalModal');
+                const modalBody = modal.querySelector('.modal-body');
 
-            const progressFill = document.querySelector('.progress-circle-fill');
-            progressFill.style.strokeDashoffset = offset;
+                try {
+                    // Show loading state
+                    modalBody.innerHTML = `
+                    <div class="loading">
+                        <i class="fas fa-circle-notch spin"></i>
+                        Loading capital details...
+                    </div>
+                `;
+                    modal.style.display = 'block';
 
-            document.getElementById('progress-percent').textContent = `${Math.round(spentPercentage)}%`;
+                    const response = await fetch(CAPITAL_DETAILS_URL);
+                    const data = await response.json();
 
-            const progressText = document.getElementById('progress-text');
-            if (spentPercentage >= 100) {
-                progressText.textContent = 'Budget exceeded!';
-                progressFill.style.stroke = 'var(--danger)';
-            } else if (spentPercentage >= 80) {
-                progressText.textContent = 'Budget almost used up';
-                progressFill.style.stroke = 'var(--warning)';
-            } else {
-                progressText.textContent = 'of budget used';
-                progressFill.style.stroke = 'var(--primary)';
-            }
+                    if (data.status === 'success') {
+                        displayCapitalDetails(data.data);
+                    } else {
+                        throw new Error(data.error || 'Failed to load details');
+                    }
+                } catch (error) {
+                    modalBody.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <div>
+                            <strong>Error loading capital details:</strong> ${error.message}
+                        </div>
+                    </div>
+                `;
+                }
         }
+
+        function displayCapitalDetails(data) {
+                const modalBody = document.querySelector('.modal-body');
+
+                modalBody.innerHTML = `
+                <div class="capital-summary">
+                    
+                    
+                    <div class="capital-breakdown">
+                        <h4><i class="fas fa-exchange-alt"></i> Transaction History</h4>
+                        <ul id="capitalTransactions"></ul>
+                    </div>
+                </div>
+            `;
+
+                const transactionsList = document.getElementById('capitalTransactions');
+
+                if (data.transactions?.length > 0) {
+                    transactionsList.innerHTML = '';
+
+                    data.transactions.forEach(t => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                        <span>${new Date(t.date).toLocaleDateString()}</span>
+                        <span>${t.amount.toLocaleString()} THB</span>
+                    `;
+                        transactionsList.appendChild(li);
+                    });
+
+                    if (data.totalTransactions) {
+                        const totalLi = document.createElement('li');
+                        totalLi.className = 'total';
+                        totalLi.innerHTML = `
+                        <span>Total Amount:</span>
+                        <span>${data.totalTransactions.toLocaleString()} THB</span>
+                    `;
+                        transactionsList.appendChild(totalLi);
+                    }
+                } else {
+                    transactionsList.innerHTML = '<li>No transaction history available</li>';
+                }
+            }
+
+        // ================== CALENDAR FUNCTIONS ================== //
 
         function renderCalendar(data) {
             const container = document.getElementById('calendar-container');
@@ -998,7 +1072,7 @@
                 return;
             }
 
-            // Create a map of date to total amount for quick lookup
+            // Create expense map
             const expenseMap = {};
             data.expenses.forEach(day => {
                 const date = new Date(day.date);
@@ -1006,15 +1080,14 @@
                 expenseMap[dateKey] = day.total;
             });
 
-            // Get first day of month and total days in month
+            // Calendar setup
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
             const today = new Date();
             const isCurrentMonth = currentMonth === today.getMonth() && currentYear === today.getFullYear();
-
-            // Generate calendar HTML
             const monthName = new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
+            // Generate calendar HTML
             let calendarHTML = `
                     <div class="calendar-header">
                         <div class="calendar-title">${monthName}</div>
@@ -1039,12 +1112,12 @@
                     <div class="calendar-days">
                 `;
 
-            // Add empty cells for days before the first day of the month
+            // Empty cells for days before first day of month
             for (let i = 0; i < firstDay; i++) {
                 calendarHTML += `<div class="calendar-day empty"></div>`;
             }
 
-            // Add cells for each day of the month
+            // Days of month
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(currentYear, currentMonth, day);
                 const dateString = date.toISOString().split('T')[0];
@@ -1057,9 +1130,7 @@
                         <div class="calendar-day ${isToday ? 'today' : ''}" 
                              onclick="scrollToDate('${dateString}', this)">
                             <div class="calendar-day-number">${day}</div>
-                            ${hasExpense ?
-                        `<div class="calendar-day-amount">${expenseAmount.toLocaleString()} THB</div>` :
-                        ''}
+                            ${hasExpense ? `<div class="calendar-day-amount">${expenseAmount.toLocaleString()} THB</div>` : ''}
                         </div>
                     `;
             }
@@ -1121,97 +1192,302 @@
                 // If no expenses for that date, show a message
                 const statusEl = document.getElementById('status-message');
                 statusEl.innerHTML = `
-                        <div style="background-color: var(--warning-light); color: var(--warning); 
-                                    padding: 0.75rem; border-radius: 0.5rem; display: flex; 
-                                    align-items: center; gap: 0.5rem;">
-                            <i class="fas fa-info-circle"></i>
-                            No expenses recorded for ${new Date(dateString).toLocaleDateString()}
-                        </div>
-                    `;
+                            <div style="background-color: var(--warning-light); color: var(--warning); 
+                                        padding: 0.75rem; border-radius: 0.5rem; display: flex; 
+                                        align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-info-circle"></i>
+                                No expenses recorded for ${new Date(dateString).toLocaleDateString()}
+                            </div>
+                        `;
                 setTimeout(() => {
                     statusEl.innerHTML = '';
                 }, 3000);
             }
         }
 
+        // ================== EXPENSE DISPLAY FUNCTIONS ================== //
+
         function displayExpenses(data) {
             const container = document.getElementById('expenses-container');
 
             if (!data.expenses || data.expenses.length === 0) {
                 container.innerHTML = `
-                        <div style="text-align: center; padding: 2rem; color: var(--gray);">
-                            <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                            <div>No expenses recorded yet</div>
-                        </div>
-                    `;
+                            <div style="text-align: center; padding: 2rem; color: var(--gray);">
+                                <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                                <div>No expenses recorded yet</div>
+                            </div>
+                        `;
                 return;
             }
 
             container.innerHTML = data.expenses.map(day => {
-                // Ensure the date is formatted consistently
                 const date = new Date(day.date);
                 const dateString = date.toISOString().split('T')[0];
 
                 return `
-                        <div class="expense-day" id="day-${dateString}">
-                            <div class="day-header">
-                                <div class="day-date">
-                                    ${date.toLocaleDateString('en-GB', {
+                            <div class="expense-day" id="day-${dateString}">
+                                <div class="day-header">
+                                    <div class="day-date">
+                                        ${date.toLocaleDateString('en-GB', {
                     weekday: 'long',
                     day: 'numeric',
                     month: 'short',
                     year: 'numeric'
                 })}
-                                </div>
-                                <div class="day-total">
-                                    ${day.total.toLocaleString()} THB
-                                </div>
-                            </div>
-                            <div class="expense-list">
-                                ${day.items.map(item => `
-                                    <div class="expense-item">
-                                        <div class="expense-desc">${item.description}</div>
-                                        <div class="expense-amount">${item.amount.toLocaleString()} THB</div>
                                     </div>
-                                `).join('')}
+                                    <div class="day-total">
+                                        ${day.total.toLocaleString()} THB
+                                    </div>
+                                </div>
+                                <div class="expense-list">
+                                    ${day.items.map(item => `
+                                        <div class="expense-item">
+                                            <div class="expense-desc">${item.description}</div>
+                                            <div class="expense-amount">${item.amount.toLocaleString()} THB</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
             }).join('');
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+        function updateDailyExpensesChart(data) {
+            document.getElementById('chart-loading').style.display = 'none';
+            document.getElementById('daily-expenses-chart').style.display = 'block';
+            const ctx = document.getElementById('daily-expenses-chart').getContext('2d');
 
-            // More sensitive scroll detection
-            window.addEventListener('scroll', function () {
-                if (window.pageYOffset > 200) { // Shows earlier (200px instead of 300px)
-                    scrollToTopBtn.classList.add('visible');
-                } else {
-                    scrollToTopBtn.classList.remove('visible');
+            // Group expenses by day
+            const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+            const dailyTotals = Array(daysInMonth).fill(0);
+
+            data.expenses.forEach(day => {
+                const dayOfMonth = new Date(day.date).getDate();
+                dailyTotals[dayOfMonth - 1] = day.total;
+            });
+
+            // Generate labels and colors
+            const labels = Array.from({ length: daysInMonth }, (_, i) => `Day ${i + 1}`);
+            const backgroundColors = dailyTotals.map((_, i) => {
+                const hue = (i * (360 / daysInMonth)) % 360;
+                return `hsl(${hue}, 70%, 60%)`;
+            });
+
+            // Destroy previous chart if exists
+            if (window.dailyExpensesChart) {
+                window.dailyExpensesChart.destroy();
+            }
+
+            window.dailyExpensesChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dailyTotals,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 20,
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value.toLocaleString()} THB (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const day = index + 1;
+                            const targetDate = data.expenses.find(d =>
+                                new Date(d.date).getDate() === day
+                            )?.date;
+                            if (targetDate) {
+                                scrollToDate(targetDate);
+                            }
+                        }
+                    }
                 }
             });
+        }
 
-            // Better click handling
-            scrollToTopBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
+        // ================== JSONP FALLBACK ================== //
+
+        function tryJsonp() {
+            const callbackName = 'jsonp_' + Date.now();
+            const script = document.createElement('script');
+
+            window[callbackName] = function (jsonData) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+
+                let data;
+                if (jsonData.status === "success") {
+                    data = jsonData.data;
+                } else {
+                    data = jsonData;
+                }
+
+                // Ensure expenses array exists
+                if (!data.expenses) {
+                    data.expenses = [];
+                }
+
+                // Calculate totals if not provided
+                if (typeof data.totalExpenses === 'undefined') {
+                    data.totalExpenses = data.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+                }
+
+                if (typeof data.remainingBalance === 'undefined' && typeof data.capital !== 'undefined') {
+                    data.remainingBalance = data.capital - data.totalExpenses;
+                }
+/*
+                expensesData = data;
+                updateBalance(data);
+                updateProgressCircle(data);
+                renderCalendar(data);
+                displayExpenses(data);
+                updateDailyExpensesChart(data);
+                */
+            };
+
+            script.src = `${SCRIPT_URL}?callback=${callbackName}&t=${Date.now()}`;
+            document.body.appendChild(script);
+
+            setTimeout(() => {
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                    document.getElementById('status-message').innerHTML = `
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <div>
+                                    <strong>Connection Timeout</strong><br>
+                                    <small>The server is not responding. Please try again later.</small>
+                                </div>
+                            </div>
+                        `;
+                }
+            }, 8000);
+        }
+
+        function updateBalance(data) {
+                // Ensure we have valid numbers (default to 0 if not)
+                const capital = Number(data.capital) || 0;
+                const totalExpenses = Number(data.totalExpenses) || 0;
+                const remaining = capital - totalExpenses;
+                const isNegative = remaining < 0;
+
+                document.getElementById('capital-value').textContent =
+                    `${capital.toLocaleString()} THB`;
+
+                document.getElementById('expenses-value').textContent =
+                    `${totalExpenses.toLocaleString()} THB`;
+
+                const balanceEl = document.getElementById('balance-value');
+                balanceEl.textContent = `${Math.abs(remaining).toLocaleString()} THB`;
+                balanceEl.className = `balance-value ${isNegative ? 'balance-negative' : 'balance-positive'}`;
+
+                if (isNegative) {
+                    balanceEl.innerHTML += ` <small>(Over Budget)</small>`;
+                }
+            }
+
+        //Update  progress circle
+        // Update the updateProgressCircle function to handle NaN cases
+            function updateProgressCircle(data) {
+                // Ensure we have valid numbers (default to 0 if not)
+                const capital = Number(data.capital) || 1; // Use 1 to avoid division by zero
+                const totalExpenses = Number(data.totalExpenses) || 0;
+
+                // Calculate percentage (cap at 100%)
+                const spentPercentage = Math.min(100, (totalExpenses / capital) * 100);
+                const circumference = 2 * Math.PI * 45; // 2πr
+                const offset = circumference - (spentPercentage / 100) * circumference;
+
+                const progressFill = document.querySelector('.progress-circle-fill');
+                progressFill.style.strokeDashoffset = offset;
+
+                document.getElementById('progress-percent').textContent =
+                    `${Math.round(spentPercentage)}%`;
+
+                const progressText = document.getElementById('progress-text');
+                if (spentPercentage >= 100) {
+                    progressText.textContent = 'Budget exceeded!';
+                    progressFill.style.stroke = 'var(--danger)';
+                } else if (spentPercentage >= 80) {
+                    progressText.textContent = 'Budget almost used up';
+                    progressFill.style.stroke = 'var(--warning)';
+                } else {
+                    progressText.textContent = 'of budget used';
+                    progressFill.style.stroke = 'var(--primary)';
+                }
+            }
+
+
+
+
+
+
+        // ================== INITIALIZATION ================== //
+
+        document.addEventListener('DOMContentLoaded', function () {
+                // Initial load
+                loadData();
+                setInterval(loadData, 120000);
+
+                // Capital details click handler - updated to work with the modal
+                document.querySelectorAll('.clickable-balance').forEach(item => {
+                    item.addEventListener('click', fetchCapitalDetails);
                 });
+
+                // Scroll to top button
+                const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+                window.addEventListener('scroll', () => {
+                    scrollToTopBtn.classList.toggle('visible', window.pageYOffset > 200);
+                });
+                scrollToTopBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+
+                // Close modal when clicking the X or outside
+                const modal = document.getElementById('capitalModal');
+                if (modal) {
+                    const closeBtn = modal.querySelector('.close');
+                    if (closeBtn) {
+                        closeBtn.addEventListener('click', () => {
+                            modal.style.display = 'none';
+                        });
+                    }
+                    window.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            modal.style.display = 'none';
+                        }
+                    });
+                }
             });
-
-            // Ensure button stays clickable
-            scrollToTopBtn.style.pointerEvents = 'auto';
-        });
-
-        // Initial load
-        document.addEventListener('DOMContentLoaded', () => {
-            loadData();
-            // Auto-refresh every 2 minutes
-            setInterval(() => loadData(), 120000);
-        });
     </script>
+
+    
 
 </body>
 
