@@ -392,6 +392,23 @@
             margin-left: 1rem;
         }
 
+        /* Add to your existing CSS */
+        .weekly-chart-container {
+        position: relative;
+        margin: auto;
+        height: 300px;
+        width: 100%;
+        }
+
+        .weekly-bar {
+        transition: all 0.3s ease;
+        }
+
+        .weekly-bar:hover {
+        opacity: 0.8;
+        transform: translateY(-2px);
+        }
+
         /* Make the entire balance item clickable */
         .clickable-balance {
             cursor: pointer;
@@ -831,6 +848,20 @@
             </div>
         </section>
 
+        <section class="card">
+            <h2 class="card-title">
+                <i class="fas fa-chart-line"></i>
+                Weekly Expense Report
+            </h2>
+            <div style="position: relative; height: 300px;">
+                <div id="weekly-chart-loading" class="loading">
+                    <i class="fas fa-circle-notch spin"></i>
+                    Loading weekly data...
+                </div>
+                <canvas id="weekly-expenses-chart" style="display: none;"></canvas>
+            </div>
+        </section>
+
         <!-- Calendar Summary Section -->
         <section class="card">
             <h2 class="card-title">
@@ -924,6 +955,7 @@
                 }
 
                 expensesData = data;
+                updateWeeklyExpensesChart(data);
                 updateBalance(data);
                 updateProgressCircle(data);
                 renderCalendar(data);
@@ -958,6 +990,177 @@
                 refreshIcon.classList.remove('spin');
             }
         }
+
+        // Added function for testing chart
+        function updateWeeklyExpensesChart(data) {
+                const ctx = document.getElementById('weekly-expenses-chart').getContext('2d');
+                const loadingElement = document.getElementById('weekly-chart-loading');
+
+                try {
+                    // Validate input data
+                    if (!data || !Array.isArray(data.expenses)) {
+                        throw new Error('Invalid data format - expenses array missing');
+                    }
+
+                    // Process data
+                    const weeklyData = processWeeklyData(data.expenses);
+
+                    console.log('Processed Weekly Data:', weeklyData);
+
+                    // Validate processed data
+                    if (!weeklyData.totals.every(Number.isFinite)) {
+                        console.error('Invalid totals data:', weeklyData.totals);
+                        throw new Error('Some day totals are not valid numbers');
+                    }
+
+                    // Destroy previous chart if exists
+                    if (window.weeklyExpensesChart) {
+                        window.weeklyExpensesChart.destroy();
+                    }
+
+                    // Hide loading, show chart
+                    loadingElement.style.display = 'none';
+                    document.getElementById('weekly-expenses-chart').style.display = 'block';
+
+                    // Calculate max value with minimum of 1000 for better visualization
+                    const maxValue = Math.max(1000, ...weeklyData.totals) * 1.2;
+
+                    // Create the chart
+                    window.weeklyExpensesChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: weeklyData.days,
+                            datasets: [{
+                                label: 'Daily Expenses (THB)',
+                                data: weeklyData.totals,
+                                backgroundColor: weeklyData.days.map((_, i) => {
+                                    const hue = (i * (360 / 7)) % 360;
+                                    return `hsla(${hue}, 70%, 60%, 0.7)`;
+                                }),
+                                borderColor: weeklyData.days.map((_, i) => {
+                                    const hue = (i * (360 / 7)) % 360;
+                                    return `hsla(${hue}, 70%, 45%, 1)`;
+                                }),
+                                borderWidth: 1,
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: maxValue,
+                                    title: {
+                                        display: true,
+                                        text: 'Amount (THB)'
+                                    },
+                                    ticks: {
+                                        callback: function (value) {
+                                            return value.toLocaleString() + ' THB';
+                                        }
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Day of Week'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            return `${context.parsed.y.toLocaleString()} THB`;
+                                        },
+                                        afterLabel: function (context) {
+                                            // Show number of transactions for the day
+                                            const dayIndex = context.dataIndex;
+                                            const dayExpenses = data.expenses.filter(e => {
+                                                const date = new Date(e.date);
+                                                return date.getDay() === dayIndex;
+                                            });
+                                            return dayExpenses.length > 0
+                                                ? `${dayExpenses[0].items.length} items`
+                                                : 'No items';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                } catch (error) {
+                    console.error('Error creating weekly chart:', error);
+                    loadingElement.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                Error loading chart: ${error.message}
+                <div style="margin-top: 10px; font-size: 0.8em;">
+                    Check console for details
+                </div>
+            </div>
+        `;
+                }
+            }
+
+            // another function
+            function processWeeklyData(expenses) {
+                    // Initialize daily totals for all days of week
+                    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    const totals = new Array(7).fill(0); // Initialize all days to 0
+
+                    expenses.forEach(dayExpense => {
+                        try {
+                            // Use the total from the day object instead of individual amounts
+                            const amount = Number(dayExpense.total);
+                            if (isNaN(amount)) {
+                                console.warn('Invalid total:', dayExpense.total, 'in day:', dayExpense);
+                                return;
+                            }
+
+                            // Parse date
+                            const dateObj = new Date(dayExpense.date);
+                            if (isNaN(dateObj.getTime())) {
+                                console.warn('Invalid date:', dayExpense.date, 'in day:', dayExpense);
+                                return;
+                            }
+
+                            const dayOfWeek = dateObj.getDay(); // 0 (Sun) to 6 (Sat)
+                            totals[dayOfWeek] += amount;
+
+                        } catch (error) {
+                            console.error('Error processing day expense:', dayExpense, error);
+                        }
+                    });
+
+                    return {
+                        days,
+                        totals
+                    };
+                }
+
+            // Helper function to find a date for a given day name
+            function findDateForDay(expenses, dayName) {
+                const dayMap = {
+                    'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3,
+                    'Thu': 4, 'Fri': 5, 'Sat': 6
+                };
+
+                const targetDayIndex = dayMap[dayName];
+                for (const expense of expenses) {
+                    const date = new Date(expense.date);
+                    if (date.getDay() === targetDayIndex) {
+                        return expense.date;
+                    }
+                }
+                return null;
+            }
 
         // ================== CAPITAL DETAILS FEATURE ================== //
 
