@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Expense Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="wallet.jpg" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #e0e7ff;
+            --primary-dark: #3a56d4;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --gray-light: #e2e8f0;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Padauk', sans-serif;
+            background-color: #f1f5f9;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* Header Styles */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .app-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .app-title i {
+            color: var(--primary);
+        }
+
+        /* Button Styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--card-shadow);
+        }
+
+        .btn i {
+            font-size: 0.9rem;
+        }
+
+        /* Progress Circle Styles */
+        .progress-circle-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-circle {
+            position: relative;
+            width: 180px;
+            height: 180px;
+        }
+
+        .progress-circle-bg {
+            fill: none;
+            stroke: var(--gray-light);
+            stroke-width: 8;
+        }
+
+        .progress-circle-fill {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 8;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .progress-circle-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 100%;
+        }
+
+        .progress-circle-percent {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .progress-circle-label {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 0.25rem;
+        }
+
+        /* Card Styles */
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        /* Balance Styles */
+        .balance-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .balance-item {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: var(--primary-light);
+        }
+
+        .balance-label {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-bottom: 0.25rem;
+        }
+
+        .balance-value {
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .balance-positive {
+            color: var(--success);
+        }
+
+        .balance-negative {
+            color: var(--danger);
+        }
+
+        /* Calendar Styles */
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .calendar-nav-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--gray);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .calendar-nav-btn:hover {
+            background: var(--gray-light);
+            color: var(--dark);
+        }
+
+        .calendar-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .calendar-weekday {
+            padding: 0.5rem;
+        }
+
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.25rem;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            padding: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            cursor: default;
+        }
+
+        .calendar-day:hover:not(.empty) {
+            background: var(--primary-light);
+        }
+
+        .calendar-day.active-day {
+            background: var(--primary-light);
+            border: 2px solid var(--primary);
+        }
+
+        .calendar-day-number {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .calendar-day-amount {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            background: var(--primary-light);
+            padding: 0.15rem 0.3rem;
+            border-radius: 0.25rem;
+        }
+
+        .calendar-day.today .calendar-day-number {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Expense List Styles */
+        .expense-day {
+            margin-bottom: 1.5rem;
+            border-radius: 0.75rem;
+            background-color: white;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .expense-day:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background-color: var(--primary-light);
+        }
+
+        .day-date {
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 1rem;
+        }
+
+        .day-total {
+            font-weight: 600;
+            color: var(--primary-dark);
+            font-size: 1rem;
+        }
+
+        .expense-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 0.5rem 1.5rem 1.5rem;
+        }
+
+        .expense-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background-color: #f8fafc;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .expense-item:hover {
+            background-color: #f1f5f9;
+        }
+
+        .expense-desc {
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .expense-amount {
+            font-weight: 600;
+            color: var(--dark);
+            margin-left: 1rem;
+        }
+
+        /* Status Messages */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 2rem;
+            color: var(--gray);
+        }
+
+        .error-message {
+            background-color: var(--danger-light);
+            color: var(--danger);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .error-message i {
+            font-size: 1.25rem;
+        }
+
+        /* Add this to your CSS */
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow: auto;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+        }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .modal-header h3 {
+            font-size: 1.25rem;
+            color: var(--dark);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+            transition: color 0.2s ease;
+        }
+
+        .close-modal:hover {
+            color: var(--dark);
+        }
+
+        #capital-details-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #capital-details-table th,
+            #capital-details-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        #capital-details-table th {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            font-weight: 500;
+        }
+
+        #capital-details-table tr:last-child td {
+            border-bottom: none;    
+        }
+
+        #capital-details-table tr:hover td {
+            background-color: var(--gray-light);
+        }
+
+        #capital-value {
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        #capital-value:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        /* Animation */
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
+        .combined-container {
+            display: flex;
+            gap: 20px;
+            /* Space between the two sections */
+            padding: 20px;
+        }
+
+        .combined-left {
+            flex: 1;
+        }
+
+        .combined-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Scroll to Top Button - Improved Version */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            /* Increased size */
+            height: 60px;
+            /* Increased size */
+            border-radius: 50%;
+            background: #4a6fa5;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 22px;
+            /* Larger icon */
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
+            /* More prominent shadow */
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            /* Ensure it stays on top */
+            pointer-events: auto;
+            /* Ensure it's always clickable */
+        }
+
+        .scroll-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .scroll-to-top:hover {
+            background: #3a5a8a;
+            transform: scale(1.05);
+            /* Slight grow effect on hover */
+        }
+
+        /* Make sure no other elements overlap */
+        body {
+            padding-bottom: 100px;
+            /* Prevents content from hiding behind button */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .combined-container {
+                flex-direction: column;
+            }
+
+            .scroll-to-top {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+
+        /* Adjust the progress circle size if needed */
+        .progress-circle-container {
+            width: 100%;
+            max-width: 200px;
+            margin: 0 auto;
+        }
+
+        #capital-details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+            #capital-details-table th {
+            background-color: var(--primary-light);
+            padding: 10px;
+            text-align: left;
+        }
+
+            #capital-details-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+            .total-row {
+            background-color: var(--primary-light) !important;
+        }
+
+            .total-row td {
+            padding-top: 12px;
+            border-top: 2px solid var(--primary);
+        }
+
+        /* For mobile responsiveness */
+        @media (max-width: 768px) {
+            .combined-container {
+                flex-direction: column;
+            }
+
+            .progress-circle-container {
+                max-width: 150px;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .progress-circle {
+                width: 150px;
+                height: 150px;
+            }
+
+            .progress-circle-percent {
+                font-size: 1.75rem;
+            }
+
+            .balance-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .app-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .calendar-day {
+                padding: 0.25rem;
+                font-size: 1rem;
+            }
+
+            .calendar-day-number {
+                font-size: 1rem;
+            }
+
+            .calendar-day-amount {
+                font-size: 0.7rem;
+            }
+
+            .day-header {
+                padding: 0.75rem 1rem;
+            }
+
+            .expense-list {
+                padding: 0.5rem 1rem 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+
+            .calendar-weekdays,
+            .calendar-days {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .calendar-day {
+                font-size: 0.9rem;
+                padding: 0.25rem;
+            }
+
+            .calendar-day-number {
+                font-size: 1rem;
+            }
+
+            .calendar-day-amount {
+                font-size: 0.7rem;
+            }
+        }
+
+
+        @media (max-width: 768px) {
+
+            .calendar-weekdays,
+            .calendar-days {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+
+            .calendar-weekdays,
+            .calendar-days {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 360px) {
+
+            .calendar-weekdays,
+            .calendar-days {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="app-header">
+            <h1 class="app-title">
+                <i class="fas fa-wallet"></i>
+                Monthly Expense Tracker
+            </h1>
+            <button class="btn btn-primary" onclick="loadData()" id="refresh-btn">
+                <i class="fas fa-sync-alt" id="refresh-icon"></i>
+                Refresh
+            </button>
+        </header>
+
+        <div id="status-message"></div>
+
+        <section class="card combined-container">
+            <div class="combined-left">
+                <h2 class="card-title">
+                    <i class="fas fa-coins"></i>
+                    Monthly Balance
+                </h2>
+                <div class="balance-grid">
+                    <div class="balance-item">
+                        <div class="balance-label">Starting Capital</div>
+                        <div class="balance-value" id="capital-value">-</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-label">Total Expenses</div>
+                        <div class="balance-value" id="expenses-value">-</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-label">Remaining Balance</div>
+                        <div class="balance-value" id="balance-value">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="combined-right">
+                <h2 class="card-title">
+                    <i class="fas fa-chart-pie"></i>
+                    Budget Progress
+                </h2>
+                <div class="progress-circle-container">
+                    <div class="progress-circle">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="progress-circle-bg" cx="50" cy="50" r="45"></circle>
+                            <circle class="progress-circle-fill" cx="50" cy="50" r="45" stroke-dasharray="283"
+                                stroke-dashoffset="283"></circle>
+                        </svg>
+                        <div class="progress-circle-text">
+                            <div class="progress-circle-percent" id="progress-percent">0%</div>
+                            <div class="progress-circle-label" id="progress-text">of budget used</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <button id="scrollToTopBtn" class="scroll-to-top" title="Go to top">
+            <i class="fas fa-arrow-up"></i>
+        </button>
+
+        <section class="card">
+            <h2 class="card-title">
+                <i class="fas fa-chart-pie"></i>
+                Daily Expenses Distribution
+            </h2>
+            <div style="position: relative; height: 300px;">
+                <div id="chart-loading" class="loading">
+                    <i class="fas fa-circle-notch spin"></i>
+                    Loading chart data...
+                </div>
+                <canvas id="daily-expenses-chart" style="display: none;"></canvas>      
+            </div>
+        </section>
+
+        <!-- Calendar Summary Section -->
+        <section class="card">
+            <h2 class="card-title">
+                <i class="fas fa-calendar-alt"></i>
+                Daily Summary
+            </h2>
+            <div id="calendar-container">
+                <div class="loading">
+                    <i class="fas fa-circle-notch spin"></i>
+                    Loading calendar...
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2 class="card-title">
+                <i class="fas fa-receipt"></i>
+                Expense Details
+            </h2>
+            <div id="expenses-container">
+                <div class="loading">
+                    <i class="fas fa-circle-notch spin"></i>
+                    Loading expenses...
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzound-PLrdnJs0fUH-qml6ehXvZBoROSN_rjlOn_676yy4CfUv6wejJeOtKhMmSElYGA/exec";
+        let lastFetchTime = 0;
+        let expensesData = null;
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+
+        function updateDailyExpensesChart(data) {
+            document.getElementById('chart-loading').style.display = 'none';
+            document.getElementById('daily-expenses-chart').style.display = 'block';
+            const ctx = document.getElementById('daily-expenses-chart').getContext('2d');
+
+            // Group expenses by day
+            const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+            const dailyTotals = Array(daysInMonth).fill(0);
+
+            data.expenses.forEach(day => {
+                const dayOfMonth = new Date(day.date).getDate();
+                dailyTotals[dayOfMonth - 1] = day.total;
+            });
+
+            // Generate labels for each day
+            const labels = Array.from({ length: daysInMonth }, (_, i) => `Day ${i + 1}`);
+
+            // Generate colors - using a gradient from light to dark
+            const backgroundColors = dailyTotals.map((_, i) => {
+                const hue = (i * (360 / daysInMonth)) % 360;
+                return `hsl(${hue}, 70%, 60%)`;
+            });
+
+            // Destroy previous chart if it exists
+            if (window.dailyExpensesChart) {
+                window.dailyExpensesChart.destroy();
+            }
+
+            window.dailyExpensesChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dailyTotals,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 20,
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value.toLocaleString()} THB (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const day = index + 1;
+                            // Find the date that matches this day of month
+                            const targetDate = data.expenses.find(d =>
+                                new Date(d.date).getDate() === day
+                            )?.date;
+                            if (targetDate) {
+                                scrollToDate(targetDate);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function showCapitalDetails() {
+            const modal = document.getElementById('capital-modal');
+            const modalBody = modal.querySelector('.modal-body');
+
+            try {
+                // Show loading state
+                modalBody.innerHTML = '<div class="loading"><i class="fas fa-circle-notch spin"></i> Loading capital details...</div>';
+                modal.style.display = 'block';
+
+                // Fetch with error handling
+                const response = await fetch(`${SCRIPT_URL}?type=capitalDetails`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const result = await response.json();
+
+                if (result.status !== 'success') {
+                    throw new Error(result.message || 'Server returned an error');
+                }
+
+                if (!result.data?.details) {
+                    throw new Error('No capital details found in response');
+                }
+
+                // Render table
+                const tbody = document.querySelector('#capital-details-table tbody');
+                tbody.innerHTML = result.data.details.map(item => `
+                <tr>
+                    <td>${new Date(item.date).toLocaleDateString()}</td>
+                    <td>${item.amount.toLocaleString()} THB</td>
+                </tr>
+                `).join('');
+
+                 // Add total row
+                const total = result.data.details.reduce((sum, item) => sum + item.amount, 0);
+                tbody.innerHTML += `
+                <tr class="total-row">
+                    <td><strong>Total</strong></td>
+                    <td><strong>${total.toLocaleString()} THB</strong></td>
+                </tr>
+                `;
+
+            } 
+                catch (error) {
+                    console.error('Error:', error);
+                    modalBody.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <div>${error.message}</div>
+                        <button onclick="showCapitalDetails()" class="btn btn-primary" style="margin-top: 10px;">
+                        <i class="fas fa-sync-alt"></i> Try Again
+                        </button>
+                    </div>
+                    `;
+                }
+        }
+        
+
+            // Add modal close functionality
+            function setupModal() {
+                const modal = document.getElementById('capital-modal');
+                const closeBtn = document.querySelector('.close-modal');
+
+                closeBtn.addEventListener('click', () => {
+                    modal.style.display = 'none';
+                });
+
+                window.addEventListener('click', (event) => {
+                    if (event.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            }
+
+        async function loadData() {
+            document.getElementById('chart-loading').style.display = 'flex';
+            document.getElementById('daily-expenses-chart').style.display = 'none';
+            const now = Date.now();
+            // Prevent rapid refreshes (2 second cooldown)
+            if (now - lastFetchTime < 2000) return;
+            lastFetchTime = now;
+
+            const statusEl = document.getElementById('status-message');
+            const refreshBtn = document.getElementById('refresh-btn');
+            const refreshIcon = document.getElementById('refresh-icon');
+
+            // Show loading state
+            statusEl.innerHTML = '';
+            refreshBtn.disabled = true;
+            refreshIcon.classList.add('spin');
+            document.getElementById('expenses-container').innerHTML = `
+                    <div class="loading">
+                        <i class="fas fa-circle-notch spin"></i>
+                        Loading latest data...
+                    </div>
+                `;
+            document.getElementById('calendar-container').innerHTML = `
+                    <div class="loading">
+                        <i class="fas fa-circle-notch spin"></i>
+                        Loading calendar...
+                    </div>
+                `;
+
+            try {
+                const response = await fetch(`${SCRIPT_URL}?t=${now}`);
+
+                if (!response.ok) {
+                    throw new Error(`Server responded with ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                expensesData = data;
+                updateBalance(data);
+                updateProgressCircle(data);
+                renderCalendar(data);
+                displayExpenses(data);
+                updateDailyExpensesChart(data);
+
+                // Show last updated time
+                statusEl.innerHTML = `
+                        <div style="color: var(--success); display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-check-circle"></i>
+                            Last updated: ${new Date().toLocaleTimeString()}
+                        </div>
+                    `;
+
+            } catch (error) {
+                console.error('Error:', error);
+                statusEl.innerHTML = `
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <div>
+                                <strong>Error loading data:</strong> ${error.message}<br>
+                                <small>Please check your connection and try again</small>
+                            </div>
+                        </div>
+                    `;
+
+                // Fallback to JSONP if standard fetch fails
+                if (error.message.includes('fetch')) {
+                    tryJsonp();
+                }
+                document.getElementById('chart-loading').style.display = 'none';
+                document.getElementById('daily-expenses-chart').style.display = 'block';
+            } finally {
+                refreshBtn.disabled = false;
+                refreshIcon.classList.remove('spin');
+            }
+        }
+
+        // JSONP fallback method
+        function tryJsonp() {
+            const callbackName = 'jsonp_' + Date.now();
+            const script = document.createElement('script');
+
+            window[callbackName] = function (data) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                expensesData = data;
+                updateBalance(data);
+                updateProgressCircle(data);
+                renderCalendar(data);
+                displayExpenses(data);
+                updateDailyExpensesChart(data);
+            };
+
+            script.src = `${SCRIPT_URL}?callback=${callbackName}&t=${Date.now()}`;
+            document.body.appendChild(script);
+
+            setTimeout(() => {
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                    document.getElementById('status-message').innerHTML = `
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <div>
+                                    <strong>Connection Timeout</strong><br>
+                                    <small>The server is not responding. Please try again later.</small>
+                                </div>
+                            </div>
+                        `;
+                }
+            }, 8000);
+        }
+
+        function updateBalance(data) {
+            const remaining = data.remainingBalance;
+            const isNegative = remaining < 0;
+
+            document.getElementById('capital-value').textContent =
+                `${data.capital.toLocaleString()} THB`;
+
+            document.getElementById('expenses-value').textContent =
+                `${data.grandTotal.toLocaleString()} THB`;
+
+            const balanceEl = document.getElementById('balance-value');
+            balanceEl.textContent = `${Math.abs(remaining).toLocaleString()} THB`;
+            balanceEl.className = `balance-value ${isNegative ? 'balance-negative' : 'balance-positive'}`;
+
+            if (isNegative) {
+                balanceEl.innerHTML += ` <small>(Over Budget)</small>`;
+            }
+        }
+
+        function updateProgressCircle(data) {
+            const spentPercentage = Math.min(100, (data.grandTotal / data.capital) * 100);
+            const remainingPercentage = 100 - spentPercentage;
+            const circumference = 2 * Math.PI * 45; // 2πr
+            const offset = circumference - (spentPercentage / 100) * circumference;
+
+            const progressFill = document.querySelector('.progress-circle-fill');
+            progressFill.style.strokeDashoffset = offset;
+
+            document.getElementById('progress-percent').textContent = `${Math.round(spentPercentage)}%`;
+
+            const progressText = document.getElementById('progress-text');
+            if (spentPercentage >= 100) {
+                progressText.textContent = 'Budget exceeded!';
+                progressFill.style.stroke = 'var(--danger)';
+            } else if (spentPercentage >= 80) {
+                progressText.textContent = 'Budget almost used up';
+                progressFill.style.stroke = 'var(--warning)';
+            } else {
+                progressText.textContent = 'of budget used';
+                progressFill.style.stroke = 'var(--primary)';
+            }
+        }
+
+        function renderCalendar(data) {
+            const container = document.getElementById('calendar-container');
+
+            if (!data.expenses || data.expenses.length === 0) {
+                container.innerHTML = `
+                        <div style="text-align: center; padding: 1rem; color: var(--gray);">
+                            <i class="fas fa-inbox" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+                            <div>No expenses recorded yet</div>
+                        </div>
+                    `;
+                return;
+            }
+
+            // Create a map of date to total amount for quick lookup
+            const expenseMap = {};
+            data.expenses.forEach(day => {
+                const date = new Date(day.date);
+                const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+                expenseMap[dateKey] = day.total;
+            });
+
+            // Get first day of month and total days in month
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const today = new Date();
+            const isCurrentMonth = currentMonth === today.getMonth() && currentYear === today.getFullYear();
+
+            // Generate calendar HTML
+            const monthName = new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+            let calendarHTML = `
+                    <div class="calendar-header">
+                        <div class="calendar-title">${monthName}</div>
+                        <div class="calendar-nav">
+                            <button class="calendar-nav-btn" onclick="changeMonth(-1)">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="calendar-nav-btn" onclick="changeMonth(1)">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <div class="calendar-weekday">Sun</div>
+                        <div class="calendar-weekday">Mon</div>
+                        <div class="calendar-weekday">Tue</div>
+                        <div class="calendar-weekday">Wed</div>
+                        <div class="calendar-weekday">Thu</div>
+                        <div class="calendar-weekday">Fri</div>
+                        <div class="calendar-weekday">Sat</div>
+                    </div>
+                    <div class="calendar-days">
+                `;
+
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < firstDay; i++) {
+                calendarHTML += `<div class="calendar-day empty"></div>`;
+            }
+
+            // Add cells for each day of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(currentYear, currentMonth, day);
+                const dateString = date.toISOString().split('T')[0];
+                const dateKey = `${currentYear}-${currentMonth}-${day}`;
+                const hasExpense = expenseMap[dateKey] !== undefined;
+                const isToday = isCurrentMonth && day === today.getDate();
+                const expenseAmount = hasExpense ? expenseMap[dateKey] : 0;
+
+                calendarHTML += `
+                        <div class="calendar-day ${isToday ? 'today' : ''}" 
+                             onclick="scrollToDate('${dateString}', this)">
+                            <div class="calendar-day-number">${day}</div>
+                            ${hasExpense ?
+                        `<div class="calendar-day-amount">${expenseAmount.toLocaleString()} THB</div>` :
+                        ''}
+                        </div>
+                    `;
+            }
+
+            calendarHTML += `</div>`;
+            container.innerHTML = calendarHTML;
+        }
+
+        function changeMonth(offset) {
+            currentMonth += offset;
+
+            // Adjust year if month goes out of bounds
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            } else if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+
+            // Re-render calendar with the new month
+            if (expensesData) {
+                renderCalendar(expensesData);
+            }
+        }
+
+        function scrollToDate(dateString, clickedElement) {
+            // Remove active class from all days
+            document.querySelectorAll('.calendar-day').forEach(day => {
+                day.classList.remove('active-day');
+            });
+
+            // Add active class to clicked day
+            if (clickedElement) {
+                clickedElement.classList.add('active-day');
+            }
+
+            // Find the expense day element
+            const element = document.getElementById(`day-${dateString}`);
+
+            if (element) {
+                // Scroll to the element with some offset from top
+                const offset = 120;
+                const elementPosition = element.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+
+                // Add temporary highlight
+                element.style.transition = 'background-color 0.3s ease';
+                element.style.backgroundColor = 'var(--primary-light)';
+                setTimeout(() => {
+                    element.style.backgroundColor = '';
+                }, 2000);
+            } else {
+                // If no expenses for that date, show a message
+                const statusEl = document.getElementById('status-message');
+                statusEl.innerHTML = `
+                        <div style="background-color: var(--warning-light); color: var(--warning); 
+                                    padding: 0.75rem; border-radius: 0.5rem; display: flex; 
+                                    align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-info-circle"></i>
+                            No expenses recorded for ${new Date(dateString).toLocaleDateString()}
+                        </div>
+                    `;
+                setTimeout(() => {
+                    statusEl.innerHTML = '';
+                }, 3000);
+            }
+        }
+
+        function displayExpenses(data) {
+            const container = document.getElementById('expenses-container');
+
+            if (!data.expenses || data.expenses.length === 0) {
+                container.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--gray);">
+                            <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                            <div>No expenses recorded yet</div>
+                        </div>
+                    `;
+                return;
+            }
+
+            container.innerHTML = data.expenses.map(day => {
+                // Ensure the date is formatted consistently
+                const date = new Date(day.date);
+                const dateString = date.toISOString().split('T')[0];
+
+                return `
+                        <div class="expense-day" id="day-${dateString}">
+                            <div class="day-header">
+                                <div class="day-date">
+                                    ${date.toLocaleDateString('en-GB', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                })}
+                                </div>
+                                <div class="day-total">
+                                    ${day.total.toLocaleString()} THB
+                                </div>
+                            </div>
+                            <div class="expense-list">
+                                ${day.items.map(item => `
+                                    <div class="expense-item">
+                                        <div class="expense-desc">${item.description}</div>
+                                        <div class="expense-amount">${item.amount.toLocaleString()} THB</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+
+            setupModal();
+
+            // This needs to be added inside the DOMContentLoaded event
+            document.getElementById('capital-value').addEventListener('click', showCapitalDetails);
+
+            // More sensitive scroll detection
+            window.addEventListener('scroll', function () {
+                if (window.pageYOffset > 200) { // Shows earlier (200px instead of 300px)
+                    scrollToTopBtn.classList.add('visible');
+                } else {
+                    scrollToTopBtn.classList.remove('visible');
+                }
+            });
+
+            // Better click handling
+            scrollToTopBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+
+            // Ensure button stays clickable
+            scrollToTopBtn.style.pointerEvents = 'auto';
+        });
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            // Auto-refresh every 2 minutes
+            setInterval(() => loadData(), 120000);
+        });
+    </script>
+
+    <!-- Starting Capital Details Modal -->
+    <div id="capital-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Starting Capital Details</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <table id="capital-details-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+
+</body>
+
+</html>
