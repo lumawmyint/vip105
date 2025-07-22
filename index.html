@@ -534,6 +534,72 @@
             /* Prevents content from hiding behind button */
         }
 
+        /* Style the month dropdown */
+        #month-select {
+            appearance: none; /* Remove default arrow */
+            background: linear-gradient(135deg, var(--primary), var(--success));
+            color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.6rem 2.5rem 0.6rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        /* Modern clean dropdown */
+        #month-select {
+            appearance: none; /* remove default arrow */
+            background: #ffffff; /* white background */
+            color: var(--dark);  /* dark text for visibility */
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 0.6rem 2.5rem 0.6rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--gray-light);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        /* Hover effect */
+        #month-select:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(67,97,238,0.15);
+        }
+
+        /* Focus ring */
+        #month-select:focus {
+            outline: none;
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 3px rgba(67,97,238,0.25);
+        }
+
+        /* Optional: make the arrow look custom */
+        .select-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .select-wrapper::after {
+            content: "\f078"; /* Font Awesome chevron-down */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: var(--gray);
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            font-size: 0.8rem;
+        }
+
+
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .combined-container {
@@ -827,7 +893,7 @@
                 <i class="fas fa-wallet"></i>
                 Monthly Expense Tracker
             </h1>
-            <div style="display:flex; gap:0.5rem; align-items:center;">
+            <div  class="select-wrapper">
                 <select id="month-select" class="btn">
                     <option value="Jan">January</option>
                     <option value="Feb">February</option>
@@ -840,7 +906,7 @@
                     <option value="Sep">September</option>
                     <option value="Oct">October</option>
                     <option value="Nov">November</option>
-                    <option value="Dec">December</option>
+                    <option value="Dec">December</option>       
                 </select>
                   
                 <button class="btn btn-primary" onclick="loadData()" id="refresh-btn">
@@ -1689,6 +1755,7 @@
 
         document.addEventListener('DOMContentLoaded', function () {
 
+            /*
             // populate dropdown
             const monthSelect = document.getElementById('month-select');
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -1698,6 +1765,7 @@
                 opt.textContent = m;
                 monthSelect.appendChild(opt);
             });
+            */
 
             // Set current month as default
             const currentMonthAbbr = new Date().toLocaleString('en-US', { month: 'short' });
